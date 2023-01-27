@@ -5,19 +5,8 @@ class Point {
 		this.z = z;
 	}
 
-	getSubtract(p) {
+	subtract(p) {
 		return new Point(this.x - p.x, this.y - p.y, this.z - p.z);
-	}
-
-	getModule() {
-		return(Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z));
-	}
-
-	normalize() {
-		var m = this.getModule();
-		this.x = this.x / m;
-		this.y = this.y / m;
-		this.z = this.z / m;
 	}
 }
 
@@ -39,27 +28,22 @@ class Geometry3D {
 		});
 	}
 
-	calcFacelightening(face) {
-		var v1 = this.transformedVertices[face[0]-1].getSubtract(this.transformedVertices[face[1]-1]); // first edge of this face
-		var v2 = this.transformedVertices[face[2]-1].getSubtract(this.transformedVertices[face[1]-1]); // second edge of this face
+	isFaceVisible(face) {
+		var v1 = this.transformedVertices[face[0]-1].subtract(this.transformedVertices[face[1]-1]);
+		var v2 = this.transformedVertices[face[2]-1].subtract(this.transformedVertices[face[1]-1]);
 
-		var vCross = new Point((v1.y * v2.z - v1.z * v2.y), (v1.z * v2.x - v1.x * v2.z), (v1.x * v2.y - v1.y * v2.x)); // face normal vector
-		vCross.normalize(); // unity face normal vector
-
-		return (vCross.x + vCross.y - vCross.z) * 0.57735; // simplification of normal and view vectors dot product (cos of the angle between normal and view (1, 1, -1) vectors)
+		return (/* vCrossX */ (v1.y * v2.z - v1.z * v2.y) + /* vCrossY */ (v1.z * v2.x - v1.x * v2.z) - /* vCrossZ */ (v1.x * v2.y - v1.y * v2.x) > 0);
 	}
 
 	/* TODO: convert the data files from multiple edges polygons to tryangles meshes */
 	/* TODO: subtract 1 from the vertices indexes in the data files */
-	drawWireframe(context, offsetX = 0, offsetY = 0, flagShading = false) {
+	drawWireframe(context, offsetX = 0, offsetY = 0, culling = false) {
 		var coords = new Array();
 		this.transformedVertices.forEach((v) => {
 			coords.push(new Point(v.x * 0.707 + v.y * -0.707 + offsetX, v.x * 0.409 + v.y * 0.409 + v.z * 0.816 + offsetY, 0.0));
 		});
 		this.faces.forEach((f) => {
-			var faceLightening = this.calcFacelightening(f);
-
-			if(!flagShading || faceLightening > 0) {
+			if(!culling || this.isFaceVisible(f)) {
 				context.beginPath();
 				context.moveTo(coords[f[0]-1].x,coords[f[0]-1].y);
 				context.lineTo(coords[f[1]-1].x,coords[f[1]-1].y);
@@ -67,20 +51,6 @@ class Geometry3D {
 				context.lineTo(coords[f[3]-1].x,coords[f[3]-1].y);
 				context.lineTo(coords[f[0]-1].x,coords[f[0]-1].y);
 				context.closePath();
-
-				if(flagShading) {
-					faceLightening = Math.floor(255 * faceLightening);
-					faceLightening = `rgb(${faceLightening}, ${faceLightening}, ${faceLightening})`;
-	
-					context.fillStyle = faceLightening;
-					// TODO: Implement my own polygon fill routine with ZBuffer
-					context.fill();
-				}
-				else {
-					faceLightening = "#00ff00";
-				}
-
-				context.strokeStyle = faceLightening;
 				context.stroke();
 			}
 		});
@@ -94,7 +64,7 @@ var context;
 var geometriesData  = [cubeData, pyramidData, chesspawnData, cylinderData, funnelsData, beadsData, coneData, sphereData, toroidData, lgbeadsData, mechpartData, rocketData];
 var geometries      = new Array();
 var currentGeometry = null;
-var flagShading     = false;
+var culling = false;
 
 var angle = 0;
 function animationLoop() {
@@ -102,7 +72,7 @@ function animationLoop() {
 
 	currentGeometry.transformVertices(-0.0075, angle); /* TODO: normalize objetcs size in data files to remove this arbitrary scale factor */
 	clearCanvas();
-	currentGeometry.drawWireframe(context, canvasWidth / 2, canvasHeight / 2, flagShading);
+	currentGeometry.drawWireframe(context, canvasWidth / 2, canvasHeight / 2, culling);
 	angle = (angle + 1) % 360;
 }
 
@@ -129,8 +99,8 @@ function prepareCanvas()
 	setInterval(animationLoop,20);
 }
 
-function toogleShading() {
-	flagShading = !flagShading;
+function toogleCulling() {
+	culling = !culling;
 }
 
 function setGeometry(g) {
