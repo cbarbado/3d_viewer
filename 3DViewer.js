@@ -21,22 +21,21 @@ class Geometry3D {
 	}
 
 	/* TODO: convert the data files from multiple edges polygons to tryangles meshes */
-	/* TODO: subtract 1 from the vertices indexes in the data files */
 	drawWireframe(context, offsetX = 0, offsetY = 0) {
 		var coords = new Array();
 		this.transformedVertices.forEach((v) => {
 			var tmp = new Array;
 			tmp.push(v[0]*0.707 + v[1]*-0.707 + offsetX);
-			tmp.push(v[0]*0.409+v[1]*0.409+v[2]*0.816 + offsetY);
+			tmp.push(v[0]*0.409+v[1]*0.409-v[2]*0.816 + offsetY);
 			coords.push(tmp);
 		});
 		this.faces.forEach((f) => {
 			context.beginPath();
-			context.moveTo(coords[f[0]-1][0],coords[f[0]-1][1]);
-			context.lineTo(coords[f[1]-1][0],coords[f[1]-1][1]);
-			context.lineTo(coords[f[2]-1][0],coords[f[2]-1][1]);
-			context.lineTo(coords[f[3]-1][0],coords[f[3]-1][1]);
-			context.lineTo(coords[f[0]-1][0],coords[f[0]-1][1]);
+			context.moveTo(coords[f[0]][0],coords[f[0]][1]);
+			context.lineTo(coords[f[1]][0],coords[f[1]][1]);
+			context.lineTo(coords[f[2]][0],coords[f[2]][1]);
+			context.lineTo(coords[f[3]][0],coords[f[3]][1]);
+			context.lineTo(coords[f[0]][0],coords[f[0]][1]);
 			context.closePath();
 			context.stroke();
 		});
@@ -55,7 +54,7 @@ var angle = 0;
 function animationLoop() {
 	if(currentGeometry == null) return;
 
-	currentGeometry.transform(-0.0075, angle); /* TODO: normalize objetcs size in data files to remove this arbitrary scale factor */
+	currentGeometry.transform(1.0, angle);
 	clearCanvas();
 	currentGeometry.drawWireframe(context, canvasWidth / 2, canvasHeight / 2);
 	angle = (angle + 1) % 360;
