@@ -1,24 +1,25 @@
 class Geometry3D {
    constructor(geometryData) {
-      this.vertices            = geometryData.vertices;
+      this.vertices            = geometryData.vertices.map((v) => ({ x: v[0], y: v[1], z: v[2] }));
       this.faces               = geometryData.faces;
-      this.transformedVertices = new Array();
+      this.transformedVertices = [];
       this.transformRotate     = 0;
       this.transformScale      = 1;
    }
 
    transform(s = this.transformScale, r = this.transformRotate) {
-      this.transformedVertices = new Array();
-      this.vertices.forEach((v) => {
-         this.transformedVertices.push({x: s * (v[0] * Math.cos(r) - v[1] * Math.sin(r)), y: s * (v[0] * Math.sin(r) + v[1] * Math.cos(r)), z: s * v[2]});
-      });
+      this.transformedVertices = this.vertices.map((v) => ({
+         x: s * (v.x * Math.cos(r) - v.y * Math.sin(r)),
+         y: s * (v.x * Math.sin(r) + v.y * Math.cos(r)),
+         z: s * v.z
+       }));
    }
 
    drawWireframe(context, offsetX = 0, offsetY = 0) {
-      var coords = new Array();
-      this.transformedVertices.forEach((v) => {
-         coords.push({x: 0.707 * v.x - 0.707 * v.y + offsetX, y: 0.409 * v.x + 0.409 * v.y - 0.816 * v.z + offsetY});
-      });
+      const coords = this.transformedVertices.map((v) => ({
+         x: 0.707 * v.x - 0.707 * v.y + offsetX,
+         y: 0.409 * v.x + 0.409 * v.y - 0.816 * v.z + offsetY,
+      }));
       this.faces.forEach((f) => {
          context.beginPath();
          context.moveTo(coords[f[0]].x,coords[f[0]].y);
@@ -33,36 +34,35 @@ class Geometry3D {
 
 const canvasWidth  = 600;
 const canvasHeight = 600;
-var canvas;
-var context;
-var geometriesData  = [cubeData, pyramidData, chesspawnData, cylinderData, funnelsData, beadsData, coneData, sphereData, toroidData, lgbeadsData, mechpartData, rocketData];
-var geometries      = new Array();
-var currentGeometry = null;
+let canvas;
+let context;
+const geometriesData  = [cubeData, pyramidData, chesspawnData, cylinderData, funnelsData, beadsData, coneData, sphereData, toroidData, lgbeadsData, mechpartData, rocketData];
+const geometries = [];
+let currentGeometry = null;
 
-var angle = 0;
+let angle = 0;
 function animationLoop() {
-   if(currentGeometry == null) return;
+   if(!currentGeometry) return;
 
    currentGeometry.transform(1.0, angle);
    clearCanvas();
    currentGeometry.drawWireframe(context, canvasWidth / 2, canvasHeight / 2);
-   angle = (((angle * 10000)+180) % 31415) / 10000;
+   angle = (((angle * 10000) + 180) % 31415) / 10000;
 }
 
 function prepareCanvas()
 {
-   var canvasDiv = document.getElementById("canvasDiv");
+   const canvasDiv = document.getElementById("canvasDiv");
    canvas = document.createElement("canvas");
    canvas.setAttribute("width", canvasWidth);
    canvas.setAttribute("height", canvasHeight);
    canvas.setAttribute("id", "canvas");
    canvasDiv.appendChild(canvas);
-   if(typeof G_vmlCanvasManager != "undefined") {
+   if(typeof G_vmlCanvasManager !== "undefined") {
       canvas = G_vmlCanvasManager.initElement(canvas);
    }
 
-   context = document.getElementById("canvas").getContext("2d");
-
+   context = canvas.getContext("2d");
    context.strokeStyle = "#00ff00";
 
    geometriesData.forEach((gd) => {
@@ -73,8 +73,8 @@ function prepareCanvas()
 }
 
 function setGeometry(g) {
-   currentGeometry = (g == null) ? null : geometries[g];
-   if(null == currentGeometry) {
+   currentGeometry = g === null ? null : geometries[g];
+   if(!currentGeometry) {
       clearCanvas();
    }
 }
