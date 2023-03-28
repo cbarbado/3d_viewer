@@ -1,26 +1,24 @@
-class Geometry3D {
-   constructor(geometryData) {
-      this.vertices            = geometryData.vertices.map((v) => ({ x: v[0], y: v[1], z: v[2] }));
-      this.faces               = geometryData.faces;
-      this.transformedVertices = [];
-      this.transformRotate     = 0;
-      this.transformScale      = 1;
-   }
+const Geometry3D = (geometryData) => {
+   const vertices = geometryData.vertices;
+   const faces    = geometryData.faces;
+   let transformedVertices = [];
+   let transformRotate     = 0;
+   let transformScale      = 1;
 
-   transform(s = this.transformScale, r = this.transformRotate) {
-      this.transformedVertices = this.vertices.map((v) => ({
-         x: s * (v.x * Math.cos(r) - v.y * Math.sin(r)),
-         y: s * (v.x * Math.sin(r) + v.y * Math.cos(r)),
-         z: s * v.z
-       }));
-   }
-
-   drawWireframe(context, offsetX = 0, offsetY = 0) {
-      const coords = this.transformedVertices.map((v) => ({
-         x: 0.707 * v.x - 0.707 * v.y + offsetX,
-         y: 0.409 * v.x + 0.409 * v.y - 0.816 * v.z + offsetY,
+   const transform = (s = transformScale, r = transformRotate) => {
+      transformedVertices = vertices.map((v) => ({
+         x: s * (v[0] * Math.cos(r) - v[1] * Math.sin(r)),
+         y: s * (v[0] * Math.sin(r) + v[1] * Math.cos(r)),
+         z: s * v[2]
       }));
-      this.faces.forEach((f) => {
+   };
+
+   const drawWireframe = (context, offsetX = 0, offsetY = 0) => {
+      const coords = transformedVertices.map((v) => ({
+         x: 0.707 * v.x - 0.707 * v.y + offsetX,
+         y: 0.409 * v.x + 0.409 * v.y - 0.816 * v.z + offsetY
+      }));
+      faces.forEach((f) => {
          context.beginPath();
          context.moveTo(coords[f[0]].x,coords[f[0]].y);
          for(var i = (f.length - 1); i >= 0; i--) {
@@ -29,8 +27,12 @@ class Geometry3D {
          context.closePath();
          context.stroke();
       });
-   }
-}
+   };
+
+   return {
+      transform, drawWireframe
+   };
+};
 
 const canvasWidth  = 600;
 const canvasHeight = 600;
@@ -41,17 +43,16 @@ const geometries = [];
 let currentGeometry = null;
 
 let angle = 0;
-function animationLoop() {
+const animationLoop = () => {
    if(!currentGeometry) return;
 
    currentGeometry.transform(1.0, angle);
    clearCanvas();
    currentGeometry.drawWireframe(context, canvasWidth / 2, canvasHeight / 2);
    angle = (((angle * 10000) + 180) % 31415) / 10000;
-}
+};
 
-function prepareCanvas()
-{
+const prepareCanvas = () => {
    const canvasDiv = document.getElementById("canvasDiv");
    canvas = document.createElement("canvas");
    canvas.setAttribute("width", canvasWidth);
@@ -66,20 +67,19 @@ function prepareCanvas()
    context.strokeStyle = "#00ff00";
 
    geometriesData.forEach((gd) => {
-      geometries.push(new Geometry3D(JSON.parse(gd)));
+      geometries.push(Geometry3D(JSON.parse(gd)));
    });
 
    setInterval(animationLoop,20);
-}
+};
 
-function setGeometry(g) {
+const setGeometry = (g) => {
    currentGeometry = g === null ? null : geometries[g];
    if(!currentGeometry) {
       clearCanvas();
    }
-}
+};
 
-function clearCanvas()
-{
+const clearCanvas = () => {
    context.clearRect(0, 0, canvasWidth, canvasHeight);
-}
+};
