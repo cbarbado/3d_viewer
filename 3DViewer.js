@@ -1,5 +1,5 @@
 const Geometry3D = (geometryData) => {
-   const vertices = geometryData.vertices;
+   const vertices = geometryData.vertices.map((v) => ({ x: v[0], y: v[1], z: v[2] }));
    const faces    = geometryData.faces;
    let transformedVertices = [];
    let transformRotate     = 0;
@@ -7,9 +7,9 @@ const Geometry3D = (geometryData) => {
 
    const transform = (s = transformScale, r = transformRotate) => {
       transformedVertices = vertices.map((v) => ({
-         x: s * (v[0] * Math.cos(r) - v[1] * Math.sin(r)),
-         y: s * (v[0] * Math.sin(r) + v[1] * Math.cos(r)),
-         z: s * v[2]
+         x: s * (v.x * Math.cos(r) - v.y * Math.sin(r)),
+         y: s * (v.x * Math.sin(r) + v.y * Math.cos(r)),
+         z: s * v.z
       }));
    };
 
@@ -36,7 +36,6 @@ const Geometry3D = (geometryData) => {
 
 const canvasWidth  = 600;
 const canvasHeight = 600;
-let canvas;
 let context;
 const geometriesData  = [cubeData, pyramidData, chesspawnData, cylinderData, funnelsData, beadsData, coneData, sphereData, toroidData, lgbeadsData, mechpartData, rocketData];
 const geometries = [];
@@ -54,7 +53,7 @@ const animationLoop = () => {
 
 const prepareCanvas = () => {
    const canvasDiv = document.getElementById("canvasDiv");
-   canvas = document.createElement("canvas");
+   const canvas    = document.createElement("canvas");
    canvas.setAttribute("width", canvasWidth);
    canvas.setAttribute("height", canvasHeight);
    canvas.setAttribute("id", "canvas");
